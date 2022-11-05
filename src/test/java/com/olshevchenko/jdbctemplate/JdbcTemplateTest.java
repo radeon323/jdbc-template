@@ -7,7 +7,6 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.BufferedReader;
@@ -44,9 +43,6 @@ class JdbcTemplateTest {
     private static Product productSamsung;
     private static Product productXiaomi;
     private static Product productApple;
-
-    @Mock
-    private PreparedStatement statementMock;
 
     @BeforeAll
     static void init() throws SQLException {
@@ -114,15 +110,15 @@ class JdbcTemplateTest {
                 .price(4499.0)
                 .creationDate(LocalDateTime.of(2022, 2,24, 4, 0, 0))
                 .build();
-        int rowsBefore = jdbcTemplate.update(ADD_SQL, productNokia.getName(), productNokia.getDescription(), productNokia.getPrice(), productNokia.getCreationDate());
-        assertEquals(1, rowsBefore);
+        int rowsModifiedBefore = jdbcTemplate.update(ADD_SQL, productNokia.getName(), productNokia.getDescription(), productNokia.getPrice(), productNokia.getCreationDate());
+        assertEquals(1, rowsModifiedBefore);
 
         List<Product> actualProductsBefore = jdbcTemplate.query(FIND_ALL_SQL, PRODUCT_ROW_MAPPER);
         assertEquals(4, actualProductsBefore.size());
         assertTrue(actualProductsBefore.contains(productNokia));
 
-        int rowsAfter = jdbcTemplate.update(DELETE_BY_ID_SQL, 4);
-        assertEquals(1, rowsAfter);
+        int rowsModifiedAfter = jdbcTemplate.update(DELETE_BY_ID_SQL, 4);
+        assertEquals(1, rowsModifiedAfter);
         List<Product> actualProductsAfter = jdbcTemplate.query(FIND_ALL_SQL, PRODUCT_ROW_MAPPER);
         assertEquals(3, actualProductsAfter.size());
         assertFalse(actualProductsAfter.contains(productNokia));
@@ -131,13 +127,13 @@ class JdbcTemplateTest {
 
     @Test
     void testUpdateReturnANumberOfUpdatedRows() {
-        int rowsBefore = jdbcTemplate.update(UPDATE_BY_ID_SQL, "Xiaomi Updated", productXiaomi.getDescription(), productXiaomi.getPrice(), productXiaomi.getId());
-        assertEquals(1, rowsBefore);
+        int rowsModifiedBefore = jdbcTemplate.update(UPDATE_BY_ID_SQL, "Xiaomi Updated", productXiaomi.getDescription(), productXiaomi.getPrice(), productXiaomi.getId());
+        assertEquals(1, rowsModifiedBefore);
         List<Product> actualProductsBefore = jdbcTemplate.query(FIND_ALL_SQL, PRODUCT_ROW_MAPPER);
         assertEquals("Xiaomi Updated", actualProductsBefore.get(1).getName());
 
-        int rowsAfter = jdbcTemplate.update(UPDATE_BY_ID_SQL, productXiaomi.getName(), productXiaomi.getDescription(), productXiaomi.getPrice(), productXiaomi.getId());
-        assertEquals(1, rowsAfter);
+        int rowsModifiedAfter = jdbcTemplate.update(UPDATE_BY_ID_SQL, productXiaomi.getName(), productXiaomi.getDescription(), productXiaomi.getPrice(), productXiaomi.getId());
+        assertEquals(1, rowsModifiedAfter);
         List<Product> actualProductsAfter = jdbcTemplate.query(FIND_ALL_SQL, PRODUCT_ROW_MAPPER);
         assertEquals(productXiaomi.getName(), actualProductsAfter.get(1).getName());
         assertEquals(expectedProducts, actualProductsAfter);
@@ -145,7 +141,7 @@ class JdbcTemplateTest {
 
     @Test
     void testUpdateThrowRuntimeException() {
-        Assertions.assertThrows(RuntimeException.class, () -> jdbcTemplate.update("", "name"));
+        assertThrows(RuntimeException.class, () -> jdbcTemplate.update("", "name"));
     }
 
     @Test
@@ -206,6 +202,18 @@ class JdbcTemplateTest {
         Object parameter = LocalTime.now();
         Object actual = jdbcTemplate.checkAndGetParameterSuitableForSetter(parameter);
         assertTrue(actual instanceof Time);
+    }
+
+    @Test
+    void testInjectParameters() throws Exception {
+        Connection connection = dataSource.getConnection();
+
+        PreparedStatement initialStatement = connection.prepareStatement(ADD_SQL);
+        PreparedStatement statementToExecute = connection.prepareStatement(ADD_SQL);
+
+        jdbcTemplate.injectParameters(statementToExecute, 1);
+
+        assertNotEquals(statementToExecute, initialStatement);
     }
 
 

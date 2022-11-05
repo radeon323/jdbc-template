@@ -38,17 +38,17 @@ public class JdbcTemplate {
         }
     }
 
-    public synchronized <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... params) {
-        String parameters = Arrays.toString(params);
+    public synchronized <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+        String parametersForLogging = Arrays.toString(parameters);
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            injectParameters(preparedStatement, params);
+            injectParameters(preparedStatement, parameters);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (!resultSet.next()) {
-                    log.error("Object matching given parameters was not found: {} ", parameters);
-                    throw new SQLException("Object matching given parameters was not found: {} ", parameters);
+                    log.error("Object matching given parameters was not found: {} ", parametersForLogging);
+                    throw new SQLException("Object matching given parameters was not found: {} ", parametersForLogging);
                 }
                 return rowMapper.mapRow(resultSet);
             }
@@ -56,33 +56,32 @@ public class JdbcTemplate {
             log.error("Cannot execute query: {} ", sql, e);
             throw new RuntimeException(e);
         } catch (Exception e) {
-            log.error("Error while parameters setting to PreparedStatement: {} ", parameters, e);
+            log.error("Error while parameters setting to PreparedStatement: {} ", parametersForLogging, e);
             throw new RuntimeException(e);
         }
     }
 
-    public synchronized int update(String sql, Object... params) {
-        String parameters = Arrays.toString(params);
+    public synchronized int update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
-            injectParameters(preparedStatement, params);
+            injectParameters(preparedStatement, parameters);
 
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
             log.error("Cannot execute query: {} ", sql, e);
             throw new RuntimeException(e);
         } catch (Exception e) {
-            log.error("Error while parameters setting to PreparedStatement: {} ", parameters, e);
+            log.error("Error while parameters setting to PreparedStatement: {} ", Arrays.toString(parameters), e);
             throw new RuntimeException(e);
         }
     }
 
-    void injectParameters(PreparedStatement statement, Object... params) throws Exception {
-        for (int i = 0; i < params.length; i++) {
+    void injectParameters(PreparedStatement statement, Object... parameters) throws Exception {
+        for (int i = 0; i < parameters.length; i++) {
             int parameterIndex = i + 1;
-            Class<?> clazz = params[i].getClass();
-            Object parameter = checkAndGetParameterSuitableForSetter(params[i]);
+            Class<?> clazz = parameters[i].getClass();
+            Object parameter = checkAndGetParameterSuitableForSetter(parameters[i]);
             Class<?> parameterClass = parameter.getClass();
             String className = checkClassNameReturnSuitableForSetter(clazz);
             String setterName = SETTER_PREFIX + className;

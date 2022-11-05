@@ -2,6 +2,7 @@ package com.olshevchenko.jdbctemplate;
 
 import com.olshevchenko.jdbctemplate.entity.Product;
 import com.olshevchenko.jdbctemplate.mapper.ProductRowMapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.h2.tools.RunScript;
@@ -44,8 +45,9 @@ class JdbcTemplateTest {
     private static Product productXiaomi;
     private static Product productApple;
 
+    @SneakyThrows
     @BeforeAll
-    static void init() throws SQLException {
+    static void init() {
         productSamsung = Product.builder()
                 .id(1)
                 .name("Samsung Galaxy M52")
@@ -204,16 +206,24 @@ class JdbcTemplateTest {
         assertTrue(actual instanceof Time);
     }
 
+    @SneakyThrows
     @Test
-    void testInjectParameters() throws Exception {
+    void testInjectParameters() {
         Connection connection = dataSource.getConnection();
-
         PreparedStatement initialStatement = connection.prepareStatement(ADD_SQL);
         PreparedStatement statementToExecute = connection.prepareStatement(ADD_SQL);
 
         jdbcTemplate.injectParameters(statementToExecute, 1);
 
         assertNotEquals(statementToExecute, initialStatement);
+    }
+
+    @SneakyThrows
+    @Test
+    void testInjectParametersInvocationThrowRuntimeException() {
+        Connection connection = dataSource.getConnection();
+        PreparedStatement statement = connection.prepareStatement(ADD_SQL);
+        assertThrows(RuntimeException.class, () -> jdbcTemplate.injectParameters(statement, new Object()));
     }
 
 

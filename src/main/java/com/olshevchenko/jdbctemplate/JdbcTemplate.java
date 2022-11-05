@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.sql.Date;
@@ -77,7 +78,7 @@ public class JdbcTemplate {
         }
     }
 
-    void injectParameters(PreparedStatement statement, Object... parameters) throws Exception {
+    void injectParameters(PreparedStatement statement, Object... parameters) {
         for (int i = 0; i < parameters.length; i++) {
             int parameterIndex = i + 1;
             Class<?> clazz = parameters[i].getClass();
@@ -86,15 +87,33 @@ public class JdbcTemplate {
             String className = checkClassNameReturnSuitableForSetter(clazz);
             String setterName = SETTER_PREFIX + className;
 
-            if (isClassPrimitive(clazz)) {
-                Field field = clazz.getField(FIELD_NAME_TYPE);
-                parameterClass = (Class<?>) field.get(0);
+            Class<? extends PreparedStatement> statementClass = null;
+            Method method = null;
+            Field field = null;
+            try {
+                if (isClassPrimitive(clazz)) {
+                    field = clazz.getField(FIELD_NAME_TYPE);
+                    parameterClass = (Class<?>) field.get(0);
+                }
+                statementClass = statement.getClass();
+                method = statementClass.getMethod(setterName, int.class, parameterClass);
+                method.setAccessible(true);
+                method.invoke(statement, parameterIndex, parameter);
+            } catch (NoSuchFieldException e) {
+                log.error("Cannot find the field '{}' in the class: {} ", field, clazz.getSimpleName(), e);
+                throw new RuntimeException(e);
+            } catch (NoSuchMethodException e) {
+                log.error("Cannot find the method in the class: {} ", statementClass.getSimpleName(), e);
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                log.error("""
+                        Cannot invoke method: {} \r
+                        preparedStatement: {} \r
+                        parameterIndex: {} \r
+                        parameter: {} \r""",
+                        Objects.requireNonNull(method).getName(), statement, parameterIndex, parameter, e);
+                throw new RuntimeException(e);
             }
-
-            Class<? extends PreparedStatement> statementClass = statement.getClass();
-            Method method = statementClass.getMethod(setterName, int.class, parameterClass);
-            method.setAccessible(true);
-            method.invoke(statement, parameterIndex, parameter);
         }
     }
 

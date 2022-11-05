@@ -1,6 +1,8 @@
 package com.olshevchenko.jdbctemplate;
 
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.DataSource;
@@ -18,11 +20,13 @@ import java.util.*;
  * @author Oleksandr Shevchenko
  */
 @Slf4j
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class JdbcTemplate {
     private static final String SETTER_PREFIX = "set";
     private static final String FIELD_NAME_TYPE = "TYPE";
-    private final DataSource dataSource;
+    private DataSource dataSource;
 
     public synchronized <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         List<T> list = Collections.synchronizedList(new ArrayList<>());

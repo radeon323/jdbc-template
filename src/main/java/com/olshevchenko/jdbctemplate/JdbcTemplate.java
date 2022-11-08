@@ -28,8 +28,8 @@ public class JdbcTemplate {
     private static final String FIELD_NAME_TYPE = "TYPE";
     private DataSource dataSource;
 
-    public synchronized <T> List<T> query(String sql, RowMapper<T> rowMapper) {
-        List<T> list = Collections.synchronizedList(new ArrayList<>());
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+        List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
             ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    public synchronized <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         String parametersForLogging = Arrays.toString(parameters);
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -66,7 +66,7 @@ public class JdbcTemplate {
         }
     }
 
-    public synchronized int update(String sql, Object... parameters) {
+    public int update(String sql, Object... parameters) {
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
 
@@ -101,7 +101,6 @@ public class JdbcTemplate {
                 }
                 statementClass = statement.getClass();
                 method = statementClass.getMethod(setterName, int.class, parameterClass);
-                method.setAccessible(true);
                 method.invoke(statement, parameterIndex, parameter);
             } catch (NoSuchFieldException e) {
                 log.error("Cannot find the field '{}' in the class: {} ", field, clazz.getSimpleName(), e);
@@ -111,11 +110,11 @@ public class JdbcTemplate {
                 throw new RuntimeException(e);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 log.error("""
-                        Cannot invoke method: {} \r
-                        preparedStatement: {} \r
-                        parameterIndex: {} \r
-                        parameter: {} \r""",
-                        Objects.requireNonNull(method).getName(), statement, parameterIndex, parameter, e);
+                        Cannot invoke method: {}
+                        preparedStatement: {}
+                        parameterIndex: {}
+                        parameter: {}""",
+                        method, statement, parameterIndex, parameter, e);
                 throw new RuntimeException(e);
             }
         }
@@ -123,13 +122,13 @@ public class JdbcTemplate {
 
     Object checkAndGetParameterSuitableForSetter(Object parameter) {
         Class<?> clazz = parameter.getClass();
-        if (clazz.equals(LocalDateTime.class)) {
+        if (clazz==LocalDateTime.class) {
             parameter = Timestamp.valueOf((LocalDateTime) parameter);
         }
-        if (clazz.equals(LocalDate.class)) {
+        if (clazz==LocalDate.class) {
             parameter = Date.valueOf((LocalDate) parameter);
         }
-        if (clazz.equals(LocalTime.class)) {
+        if (clazz==LocalTime.class) {
             parameter = Time.valueOf((LocalTime) parameter);
         }
         return parameter;

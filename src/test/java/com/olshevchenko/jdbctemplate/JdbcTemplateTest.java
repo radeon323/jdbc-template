@@ -3,21 +3,15 @@ package com.olshevchenko.jdbctemplate;
 import com.olshevchenko.jdbctemplate.entity.Product;
 import com.olshevchenko.jdbctemplate.mapper.ProductRowMapper;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.sql.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -26,8 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @author Oleksandr Shevchenko
  */
-@Slf4j
-@ExtendWith(MockitoExtension.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class JdbcTemplateTest {
     private static final String FIND_ALL_SQL = "SELECT id, name, description, price, creation_date FROM products";
     private static final String FIND_BY_ID_SQL = "SELECT id, name, description, price, creation_date FROM products WHERE id = ?";
@@ -35,19 +28,18 @@ class JdbcTemplateTest {
     private static final String DELETE_BY_ID_SQL = "DELETE FROM products WHERE id = ?";
     private static final String UPDATE_BY_ID_SQL = "UPDATE products SET name = ?, description = ?, price = ? WHERE id = ?";
 
-    private static final ProductRowMapper PRODUCT_ROW_MAPPER = new ProductRowMapper();
-    private static final BasicDataSource dataSource = new BasicDataSource();
-    private static final List<Product> expectedProducts = new ArrayList<>();
+    private final ProductRowMapper PRODUCT_ROW_MAPPER = new ProductRowMapper();
+    private final BasicDataSource dataSource = new BasicDataSource();
+    private final List<Product> expectedProducts = new ArrayList<>();
 
     private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-    private static Product productSamsung;
-    private static Product productXiaomi;
-    private static Product productApple;
+    private final Product productSamsung;
+    private final Product productXiaomi;
+    private final Product productApple;
 
     @SneakyThrows
-    @BeforeAll
-    static void init() {
+    JdbcTemplateTest() {
         productSamsung = Product.builder()
                 .id(1)
                 .name("Samsung Galaxy M52")
@@ -88,19 +80,9 @@ class JdbcTemplateTest {
     }
 
     @Test
-    void testQueryThrowRuntimeException() {
-        Assertions.assertThrows(RuntimeException.class, () -> jdbcTemplate.query("", PRODUCT_ROW_MAPPER));
-    }
-
-    @Test
     void testQueryForObjectReturnAProduct() {
         Product actualProduct = jdbcTemplate.queryForObject(FIND_BY_ID_SQL, PRODUCT_ROW_MAPPER, 1);
         assertEquals(productSamsung, actualProduct);
-    }
-
-    @Test
-    void testQueryForObjectThrowRuntimeException() {
-        Assertions.assertThrows(RuntimeException.class, () -> jdbcTemplate.queryForObject("", PRODUCT_ROW_MAPPER, 1));
     }
 
     @Test
@@ -139,71 +121,6 @@ class JdbcTemplateTest {
         List<Product> actualProductsAfter = jdbcTemplate.query(FIND_ALL_SQL, PRODUCT_ROW_MAPPER);
         assertEquals(productXiaomi.getName(), actualProductsAfter.get(1).getName());
         assertEquals(expectedProducts, actualProductsAfter);
-    }
-
-    @Test
-    void testUpdateThrowRuntimeException() {
-        assertThrows(RuntimeException.class, () -> jdbcTemplate.update("", "name"));
-    }
-
-    @Test
-    void testCheckClassNameReturnSuitableForSetterReturnClassNameInt() {
-        Class<?> clazz = Integer.class;
-        String expectedClassName = "Int";
-        String actualClassName = jdbcTemplate.checkClassNameReturnSuitableForSetter(clazz);
-        assertEquals(expectedClassName, actualClassName);
-    }
-
-    @Test
-    void testCheckClassNameReturnSuitableForSetterReturnClassNameTimestamp() {
-        Class<?> clazz = LocalDateTime.class;
-        String expectedClassName = "Timestamp";
-        String actualClassName = jdbcTemplate.checkClassNameReturnSuitableForSetter(clazz);
-        assertEquals(expectedClassName, actualClassName);
-    }
-
-    @Test
-    void testCheckClassNameReturnSuitableForSetterReturnClassNameDate() {
-        Class<?> clazz = LocalDate.class;
-        String expectedClassName = "Date";
-        String actualClassName = jdbcTemplate.checkClassNameReturnSuitableForSetter(clazz);
-        assertEquals(expectedClassName, actualClassName);
-    }
-
-    @Test
-    void testCheckClassNameReturnSuitableForSetterReturnClassNameTime() {
-        Class<?> clazz = LocalTime.class;
-        String expectedClassName = "Time";
-        String actualClassName = jdbcTemplate.checkClassNameReturnSuitableForSetter(clazz);
-        assertEquals(expectedClassName, actualClassName);
-    }
-
-    @Test
-    void testIsClassPrimitiveReturnBoolean() {
-        List<Class<?>> list = List.of(Boolean.class, Character.class, Byte.class,
-                Short.class, Integer.class, Long.class, Float.class, Double.class);
-        list.forEach((clazz) -> assertTrue(jdbcTemplate.isClassPrimitive(clazz)));
-    }
-
-    @Test
-    void testCheckAndGetParameterSuitableForSetterReturnTimestamp() {
-        Object parameter = LocalDateTime.now();
-        Object actual = jdbcTemplate.checkAndGetParameterSuitableForSetter(parameter);
-        assertTrue(actual instanceof Timestamp);
-    }
-
-    @Test
-    void testCheckAndGetParameterSuitableForSetterReturnDate() {
-        Object parameter = LocalDate.now();
-        Object actual = jdbcTemplate.checkAndGetParameterSuitableForSetter(parameter);
-        assertTrue(actual instanceof Date);
-    }
-
-    @Test
-    void testCheckAndGetParameterSuitableForSetterReturnTime() {
-        Object parameter = LocalTime.now();
-        Object actual = jdbcTemplate.checkAndGetParameterSuitableForSetter(parameter);
-        assertTrue(actual instanceof Time);
     }
 
     @SneakyThrows

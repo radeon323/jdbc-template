@@ -36,16 +36,6 @@ class JdbcTemplateUnitTest {
     }
 
     @Test
-    void testQueryForObjectThrowRuntimeException() {
-        Assertions.assertThrows(RuntimeException.class, () -> jdbcTemplate.queryForObject("", PRODUCT_ROW_MAPPER, 1));
-    }
-
-    @Test
-    void testUpdateThrowRuntimeException() {
-        assertThrows(RuntimeException.class, () -> jdbcTemplate.update("", "name"));
-    }
-
-    @Test
     void testCheckClassNameReturnSuitableForSetterReturnClassNameInt() {
         Class<?> clazz = Integer.class;
         String expectedClassName = "Int";

@@ -143,5 +143,15 @@ class JdbcTemplateTest {
         assertThrows(RuntimeException.class, () -> jdbcTemplate.injectParameters(statement, new Object()));
     }
 
+    @Test
+    void testUpdateThrowRuntimeExceptionWhenQueryNotValid() {
+        assertThrows(RuntimeException.class, () -> jdbcTemplate.update("", "name"));
+    }
+
+    @Test
+    void testQueryForObjectThrowRuntimeExceptionWhenQueryNotValid() {
+        assertThrows(RuntimeException.class, () -> jdbcTemplate.queryForObject("", PRODUCT_ROW_MAPPER, 1));
+    }
+
 
 }

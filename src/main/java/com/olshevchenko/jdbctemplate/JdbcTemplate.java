@@ -23,12 +23,12 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class JdbcTemplate {
+public class JdbcTemplate<T> {
     private static final String SETTER_PREFIX = "set";
     private static final String FIELD_NAME_TYPE = "TYPE";
     private DataSource dataSource;
 
-    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+    public List<T> query(String sql, RowMapper<T> rowMapper) {
         List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -43,7 +43,7 @@ public class JdbcTemplate {
         }
     }
 
-    public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         String parametersForLogging = Arrays.toString(parameters);
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -52,11 +52,12 @@ public class JdbcTemplate {
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (!resultSet.next()) {
-                    log.error("Object matching given parameters was not found: {} ", parametersForLogging);
-                    throw new SQLException("Object matching given parameters was not found: {} ", parametersForLogging);
+                    return Optional.empty();
                 }
-                return rowMapper.mapRow(resultSet);
+                T object = rowMapper.mapRow(resultSet);
+                return Optional.of(object);
             }
+
         } catch (SQLException e) {
             log.error("Cannot execute query: {} ", sql, e);
             throw new RuntimeException(e);

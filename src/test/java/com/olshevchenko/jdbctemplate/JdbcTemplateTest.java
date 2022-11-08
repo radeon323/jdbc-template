@@ -14,8 +14,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Oleksandr Shevchenko
@@ -32,7 +34,7 @@ class JdbcTemplateTest {
     private final BasicDataSource dataSource = new BasicDataSource();
     private final List<Product> expectedProducts = new ArrayList<>();
 
-    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+    private final JdbcTemplate<Product> jdbcTemplate = new JdbcTemplate<>(dataSource);
 
     private final Product productSamsung;
     private final Product productXiaomi;
@@ -81,8 +83,9 @@ class JdbcTemplateTest {
 
     @Test
     void testQueryForObjectReturnAProduct() {
-        Product actualProduct = jdbcTemplate.queryForObject(FIND_BY_ID_SQL, PRODUCT_ROW_MAPPER, 1);
-        assertEquals(productSamsung, actualProduct);
+        Optional<Product> actualProduct = jdbcTemplate.queryForObject(FIND_BY_ID_SQL, PRODUCT_ROW_MAPPER, 1);
+        assertTrue(actualProduct.isPresent());
+        assertEquals(productSamsung, actualProduct.get());
     }
 
     @Test

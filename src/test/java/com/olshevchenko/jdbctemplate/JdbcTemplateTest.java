@@ -34,7 +34,7 @@ class JdbcTemplateTest {
     private final BasicDataSource dataSource = new BasicDataSource();
     private final List<Product> expectedProducts = new ArrayList<>();
 
-    private final JdbcTemplate<Product> jdbcTemplate = new JdbcTemplate<>(dataSource);
+    private final JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
     private final Product productSamsung;
     private final Product productXiaomi;

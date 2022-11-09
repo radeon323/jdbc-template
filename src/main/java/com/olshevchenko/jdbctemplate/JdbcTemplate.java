@@ -23,12 +23,12 @@ import java.util.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class JdbcTemplate<T> {
+public class JdbcTemplate {
     private static final String SETTER_PREFIX = "set";
     private static final String FIELD_NAME_TYPE = "TYPE";
     private DataSource dataSource;
 
-    public List<T> query(String sql, RowMapper<T> rowMapper) {
+    public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
         List<T> list = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -43,7 +43,7 @@ public class JdbcTemplate<T> {
         }
     }
 
-    public Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
+    public <T> Optional<T> queryForObject(String sql, RowMapper<T> rowMapper, Object... parameters) {
         String parametersForLogging = Arrays.toString(parameters);
         try (Connection connection = dataSource.getConnection();
             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
